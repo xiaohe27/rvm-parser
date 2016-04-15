@@ -2,15 +2,20 @@ require "rvm-syntax.k"
 require "domains.k"
 require "rvm-compiler-core.k"
 require "../helper/print-ast.k"
+require "../../src/helper/util.k"
 
-require "../logic/semantics/fsm.k"
+////
+require "logic-plugins-shell.k"
+require "../c-monitor-code-template/c-monitor-template.k"
 
 module RVM-COMPILER
     imports RVM-SYNTAX
     imports RVM-COMPILER-CORE
     imports PRINT-AST
+    imports UTIL
 
-    imports FSM
+        imports LOGIC-PLUGINS-SHELL
+        imports C-MONITOR-TEMPLATE
 
     syntax KResult ::= "error"
 
@@ -34,9 +39,8 @@ rule <k>X:Id (Ps:Params) SB:SpecBody => SB </k>
 rule <k> {(Decls:DecBubbleList => .K) Events:EventDecList
 Props:PropertyDecList} </k>
     <decBubble> .K => Decls </decBubble>
+<propSize> I:Int => sizeOf(Props) </propSize>
 
-//rule <k> {(Decl:DecBubble Decls:DecBubbleList => Decls) Events:EventDecList
-//Props:PropertyDecList} </k>
 
 
 
@@ -45,19 +49,53 @@ Props:PropertyDecList} </k>
 */
 rule <k> {.K ((EM:EventModifier event (X:Id) (Ps:Params) Body:BlockBubble)
  Events:EventDecList => Events) Props:PropertyDecList} </k>
-<events> (.Set => SetItem(X)) Cur:Set  </events>
+<events> L:List (.List => ListItem(Id2String(X))) </events>
 
-<stateTransformer>
+<eventFuncs>
   ...
 
-  (.Bag => <eventFunc>
-    <event> X </event>
-    ...
-    </eventFunc>)
-</stateTransformer>
+  (.Bag =>
+                              <eventFunc>
+                                  <event> X </event>
+                                  <props>
+                                    <prop>
+                                      <prank> PS -Int 1 </prank>
+                                      <func> .Map </func>
+                                      <intArr> .List </intArr>
+                                    </prop>
+                                  </props>
+                              </eventFunc>
+  )
+</eventFuncs>
+<propSize> PS:Int </propSize>
+<k2> .K => PS -Int 1 </k2>
 
-<eventNum> I:Int => I +Int 1 </eventNum>
-when notBool (X in Cur)
+when notBool (Id2String(X) in L)
+
+
+//construct initial props cells
+rule <eventFuncs>
+  ...
+
+
+                              <eventFunc>
+                                  <event> X </event>
+                                  <props>
+                                    (.Bag => <prop>
+                                               <prank> PS -Int 1 </prank>
+                                               <func> .Map </func>
+                                                <intArr> .List </intArr>
+                                               </prop>)
+                                    ...
+                                  </props>
+                              </eventFunc>
+
+  ...
+</eventFuncs>
+<k2> PS:Int => PS -Int 1 </k2>
+when PS >Int 0
+
+rule <k2> 0 => .K </k2>
 
 /**
 * Report error if an event is defined multiple times.
@@ -66,9 +104,9 @@ when notBool (X in Cur)
 */
 rule <k> {.K ((EM:EventModifier event (X:Id) (Ps:Params) Body:BlockBubble)
  Events:EventDecList) Props:PropertyDecList} => .K </k>
-<events> Cur:Set </events>
+<events> EL:List </events>
 <err> (.List => ListItem("Duplicate event " +String Id2String(X))) ErrList:List </err>
-when (X in Cur)
+when (Id2String(X) in EL)
 
 //No events left
 rule
@@ -84,6 +122,8 @@ rule <k> Prop:PropertyDec Props:PropertyDecList => Props </k>
     <runPlugin> false => true </runPlugin>
 
 //No properties left
-//rule <k>.PropertyDecList</k>
+rule <k>.PropertyDecList => .</k>
+<runPlugin> false </runPlugin>
+<startCodeGen> false => true </startCodeGen>
 
 endmodule

@@ -7,19 +7,45 @@ Test (int o){
 		private int foo() { return 1; }
 		}
 
-	event create(){
-		int i;
-	}
-	event close(){
-    		int i;
-    }
+   event hasnext(Iterator i) {} // {1, 1, 1, 3}
+   event next(Iterator i) {} // {2, 0, 2, 3}
 
-	fsm: 
+	   fsm :
+     start [
+        next -> unsafe
+        hasnext -> safe
+     ]
+     safe [
+        next -> start
+        hasnext -> safe 
+     ]
+     unsafe [
+        next -> unsafe
+        hasnext -> safe
+     ]
 
-	@match {
+	@start {
 		int j;
 	}
 
+
+	   fsm :
+     start [
+        next -> unsafe
+        hasnext -> safe
+     ]
+     safe [
+        next -> start
+        hasnext -> safe 
+     ]
+     unsafe [
+        next -> unsafe
+        hasnext -> safe
+     ]
+
+	@unsafe {
+		int k;
+	}
 
 
 }

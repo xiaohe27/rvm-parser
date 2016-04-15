@@ -36,18 +36,18 @@ module RVM-COMPILER-CORE
     imports RVM-SYNTAX
 
     configuration <T> <k> $PGM:RVM  </k>
-                        <package color="black"> "" </package>
+                      <package color="black"> "" </package>
 
                       <importList color="yellow"> .K </importList>
 
-                      <events color="pink"> .Set </events> //map an event to its number
-                      <eventNum> 0 </eventNum>
+                      <events color="pink"> .List </events> //list of event name strings
 
                       <specName> "" </specName>
                       <specParams> .Params </specParams>
                       <decBubble> .K </decBubble>
 
-                      <propNum> 0 </propNum>
+                      <propNum> -1 </propNum> //the property rank
+                      <propSize> 0 </propSize> //the number of properties
 
 /////////////////////////////Logic Plugin cells starts////////////////////////////////////////////
 
@@ -56,20 +56,32 @@ module RVM-COMPILER-CORE
 
                       <runPlugin> false </runPlugin>
 
-                      <states> .Map </states> //map a state to its number
-                      <stateNum> 0 </stateNum>
+//map a state name(string) to its integer rank, temporary working cell
+                      <states> .Map </states>
+
+//states name mapping (string -> int, the map in <states> cell), indexed by property rank.
+                      <stateNameMap> .List </stateNameMap>
+
+                      <curStateRank> 0 </curStateRank>
 
                       //the raw transition defined in the rvm spec, indexed by states
                       <rawTransition> .K </rawTransition>
 
+                      <readyNum> 0 </readyNum>
+
                       //the state transformation function, indexed by events
-                      <stateTransformer color="blue">
+                      <eventFuncs color="blue">
                             <eventFunc multiplicity="*" >
                                 <event> .K </event>
-                                <func> .Map </func>
-                                <intArr> .List </intArr>
+                                <props>
+                                  <prop multiplicity="*">
+                                    <prank> -1 </prank>
+                                    <func> .Map </func>
+                                    <intArr> .List </intArr>
+                                  </prop>
+                                </props>
                             </eventFunc>
-                       </stateTransformer>
+                       </eventFuncs>
 
                       //we may need to traverse formula to get state numbers
                       //in the first scan, use this tmp cell for saving state transitions
@@ -80,12 +92,19 @@ module RVM-COMPILER-CORE
                       <aliasSet> .K </aliasSet>
 
                       <k2> .K </k2> //additional computation cell
+
 ///////////////////////Specific for FSM//////////////////////////////////////////////////////
 
 /////////////////////////////////Logic Plugin cells ends///////////////////////////////////////////
                       <handlers> .HandlerDecList </handlers>
 
                       <err> .List </err>
+
+///////////////////////////////Code Generation//////////////////////////////////////////////////
+                     <lang> "c" </lang> //the default target language for the generated monitor code
+                     <code> .List </code>
+                     <tmp> .List </tmp> //temporary cell for manipulation.
+                     <startCodeGen> false </startCodeGen>
                        </T>
 
 endmodule

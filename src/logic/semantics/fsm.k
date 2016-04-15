@@ -13,8 +13,7 @@ module FSM
 rule    <logicType> fsm  </logicType>
     <formula> IT:Item IL:ItemList AL:AliasList => (IL AL) </formula>
     <runPlugin> true </runPlugin>
-    <states> CurMap:Map => CurMap[getStateName(IT) <- I] </states>
-    <stateNum> I:Int => I +Int 1 </stateNum>
+    <states> CurMap:Map => CurMap[getStateName(IT) <- size(CurMap)] </states>
     <scanNum> 0 </scanNum>
 
 // if do not need this constraint, then comment the condition below as well as the next rule.
@@ -34,10 +33,12 @@ when (getStateName(IT) in keys(CurMap))
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /*2nd scan starts: restore the formula for the second scan*/
-rule <formula> .ItemList AL:AliasList => FC </formula>
+rule
+    <logicType> fsm  </logicType>
+    <formula> .ItemList AL:AliasList => FC </formula>
      <formulaCopy> FC:K </formulaCopy>
      <runPlugin> true </runPlugin>
-     <stateNum> _:Int => -1 </stateNum>
+     <curStateRank> _:Int => -1 </curStateRank>
          <scanNum> 0 => 1 </scanNum>
 
 /*2nd scan: get the raw transition mapping associated with the current state
@@ -50,58 +51,104 @@ The raw transitions associated with state s0 is: e1 -> s1, e2 -> s2.
 */
 rule    <logicType> fsm  </logicType>
     <formula> IT:Item IL:ItemList AL:AliasList => (IL AL) </formula>
-    <stateNum> I:Int => I +Int 1 </stateNum>
+    <curStateRank> I:Int => I +Int 1 </curStateRank>
     <rawTransition> .K => getTransitionList(IT) </rawTransition>
+        <runPlugin> true </runPlugin>
     <scanNum> 1 </scanNum>
 
 /**consume the transition functions defined for the current state.*/
 /*Handle unknown event*/
-rule    <rawTransition> (E:EventName -> SN:StateName) TL:TransitionList </rawTransition>
-        <events> Es:Set </events>
+rule <k> _ => .K </k>
+    <logicType> fsm  </logicType>
+    <rawTransition> (E:EventName -> SN:StateName) TL:TransitionList </rawTransition>
+        <events> EL:List </events>
     <scanNum> 1 </scanNum>
     <err> (.List => ListItem("Undefined event " +String getEventName(E))) ErrList:List </err>
     <runPlugin> true => false </runPlugin>
-    when notBool E in Es
+    when notBool (getEventName(E) in EL)
 
 /*Handle unknown state*/
-rule    <rawTransition> (E:EventName -> SN:StateName) TL:TransitionList </rawTransition>
+rule <k> _ => .K </k>
+    <logicType> fsm  </logicType>
+    <rawTransition> (E:EventName -> SN:StateName) TL:TransitionList </rawTransition>
         <states> SM:Map </states>
     <scanNum> 1 </scanNum>
     <err> (.List => ListItem("Undefined state " +String printStateName(SN))) ErrList:List </err>
     <runPlugin> true => false </runPlugin>
     when notBool (printStateName(SN) in keys(SM))
 
-rule    <rawTransition> (E:EventName -> SN:StateName) TL:TransitionList => TL </rawTransition>
-        <stateNum> S1:Int </stateNum>
+////////////////////////////////////////////////////////////////////
+/*Update the event transition function for event E and property P.*/
+rule    <logicType> fsm  </logicType>
+        <propNum> P:Int </propNum>
+
+        <rawTransition> (E:EventName -> SN:StateName) TL:TransitionList => TL </rawTransition>
+        <curStateRank> S1:Int </curStateRank>
         <states> SM:Map (printStateName(SN):String |-> S2:Int):Map </states>
-        <stateTransformer>
+        <eventFuncs>
             ...
 
             <eventFunc>
              <event> E </event>
-             <func> (.Map => S1 |-> S2) M:Map  </func>
+             <props>
+             ...
+
+             <prop>
+             <prank> P </prank>
+             <func> (.Map => (S1 |-> S2):Map) M:Map  </func>
             ...
+            </prop>
+
+            ...
+            </props>
              </eventFunc>
 
              ...
-        </stateTransformer>
-    <scanNum> 1 </scanNum>
+        </eventFuncs>
+    <scanNum> 1 </scanNum>  [prefer]
 
+////////////////////////////////////////////////
 
-
-rule <rawTransition> .TransitionList => .K </rawTransition>
+rule
+<logicType> fsm  </logicType>
+<rawTransition> .TransitionList => .K </rawTransition>
+    <runPlugin> true </runPlugin>
     <scanNum> 1 </scanNum>
 
 /*when all the computation related to the formula completes,
 translate the transition function from map to int array*/
-rule    <states> AllStatesMap:Map </states>
+rule    <logicType> fsm  </logicType>
+        <states> AllStatesMap:Map </states>
          <formula> .ItemList .AliasList </formula>
          <rawTransition> .K </rawTransition>
+         <propNum> PN:Int </propNum>
+
+         <readyNum> N:Int => N +Int 1 </readyNum>
+
          <eventFunc>
          ...
+         <prank> PN </prank>
          <func> SM:Map </func>
          <intArr> .List => toIntArray(SM, size(AllStatesMap)) </intArr>
          </eventFunc>
          <scanNum> 1 </scanNum>
+         <runPlugin> true </runPlugin>
+
+/*All the event transition functions have been generated,
+stop the processing of the current property,
+reset the cells and wait for the processing of the next property*/
+rule <readyNum> N:Int => 0 </readyNum>
+<logicType> _:K => .K </logicType>
+     <events> EL:List </events>
+     <runPlugin> true => false </runPlugin>
+     <states> SM:Map => .Map </states>
+     <scanNum> _:Int => 0 </scanNum>
+     <formula> _:K => .K </formula>
+     <formulaCopy> _:K => .K </formulaCopy>
+
+ <stateNameMap> SL:List (.List => ListItem(SM)) </stateNameMap>
+    //TODO: process the handlers cell
+     <handlers> _:HandlerDecList => .HandlerDecList </handlers>
+when N ==Int size(EL)
 
 endmodule
