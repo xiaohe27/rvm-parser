@@ -31,6 +31,45 @@ rule getStrKey((S:String |-> V:Int) M:Map, V) => S
 rule getStrKey((_:String |-> V1:Int) M:Map, V2:Int) => getStrKey(M, V2)
 when V1 =/=Int V2
 
+/*Get the size of a list of maps*/
+syntax Int ::= getSize(List, Int) [function]
+rule getSize(.List, I:Int) => 0
+rule getSize(ListItem(M:Map), 0) => size(M)
+rule getSize(ListItem(M:Map), I:Int) => 0 when I =/=Int 0
+
+rule getSize(ListItem(M:Map) L:List, 0) => size(M)
+rule getSize(ListItem(M:Map) L:List, I:Int) => getSize(L, I -Int 1) when I >Int 0
+rule getSize(ListItem(M:Map) L:List, I:Int) => 0 when I <Int 0
+
+/*test whether the given item is the last item of the list*/
+syntax Bool ::= isLastItem(List, Id) [function]
+rule isLastItem(.List, T:Id) => false
+rule isLastItem(ListItem(X:String), Y:Id) => X ==String Id2String(Y)
+rule isLastItem(ListItem(X:String) L:List, Y:Id) => isLastItem(L, Y)
+
+//get the no. i map in the map list
+syntax Map ::= getMapI(List, Int) [function]
+rule getMapI(.List, I:Int) => .Map
+rule getMapI(ListItem(M:Map), 0) => M
+rule getMapI(ListItem(M:Map), I:Int) => .Map when I =/=Int 0
+
+rule getMapI(ListItem(M:Map) L:List, 0) => M
+rule getMapI(ListItem(M:Map) L:List, I:Int) => .Map when I <Int 0
+rule getMapI(ListItem(M:Map) L:List, I:Int) =>
+     getMapI(L, I -Int 1) when I >Int 0
+
+//get the no. i id name in a string list
+syntax String ::= getStringI(List, Int) [function]
+rule getStringI(.List, I:Int) => ""
+rule getStringI(ListItem(X:String), 0) => X
+rule getStringI(ListItem(X:String), I:Int) => "" when I =/=Int 0
+
+rule getStringI(ListItem(X:String) L:List, 0) => X
+rule getStringI(ListItem(X:String) L:List, I:Int) => "" when I <Int 0
+rule getStringI(ListItem(X:String) L:List, I:Int) =>
+     getStringI(L, I -Int 1) when I >Int 0
+
+
 endmodule
 
 

@@ -1,36 +1,74 @@
+require "domains.k"
+
 module C-MONITOR-TEMPLATE-SYNTAX
+    imports DOMAINS
 
 //the state transition function is encoded using int array.
 syntax CTemplate ::= Include MainBody
 
-syntax MainBody ::= GlobalVarDecls MainBody1
+syntax MainBody ::= GlobalStatesInit MainBody1
 
-syntax MainBody1 ::= LocalStatesInit MainBody2
+syntax MainBody1 ::= PropStatesInit MainBody2
 syntax MainBody2 ::= ResetFunc MainBody3
-syntax MainBody3 ::= StateTransitions EventActions
+syntax MainBody3 ::= StateTransitions MainBody4
+syntax MainBody4 ::= EventMethods
 
-syntax CTemplate ::= "$CMonitor" Int Int  //the two ints are num of events and states resp.
-
+syntax CTemplate ::= "$CMonitor"
 syntax Include ::= "$incl"
-syntax GlobalVarDecls ::= "$globalInit"
+syntax MainBody ::= "$main"
+syntax MainBody1 ::= "$main1"
+syntax MainBody2 ::= "$main2"
+syntax MainBody3 ::= "$main3"
+syntax MainBody4 ::= "$main4"
 
-syntax StateVar ::= "$sVar" "(" Int ")"
-syntax LocalStatesInit ::= "$localInit" "(" Int ")"
+
+syntax GStateVar ::= "$gSVar" "(" Int ")"
+syntax GlobalStatesInit ::= "$globalInit" "(" Int ")"
+syntax GlobalStatesInit ::= GStateVar "," GlobalStatesInit
+
+syntax StateVar ::= "$sVar" "(" Int ","  Int ")" //prop rank, state rank
+//args of $localInit: the prop rank, the number of states in the property
+syntax LocalStatesInit ::= "$localInit" "(" Int ","  Int ")"
 syntax LocalStatesInit ::= StateVar "," LocalStatesInit
+
+syntax PropStatesInit ::= "$pStates" "(" Int ")"
+syntax PropStatesInit ::= LocalStatesInit ":" PropStatesInit
+
 
 syntax ResetFunc ::= "$reset"
 
-syntax StateTransitions ::= "$stateFuncs" "(" Int ")"
-syntax StateTransitions ::= List{StateFunc, ","}
-syntax StateFunc ::= "$sFunc" "(" Int ")"
+//the state functions are indexed by property rank and event rank
+syntax StateTransitions ::= "$stateFuncs" "(" Int "," Int ")"
+syntax StateFunc ::= "$sFunc" "(" Int "," Int ")"
+syntax StateTransitions ::= StateFunc
+                        | StateFunc "," StateTransitions
+                        | "$emptyTransition"
 
-syntax EventActions ::= "$eventFuncs" "(" Int ")"
-syntax EventActions ::= List{EventFunc, ","}
-syntax EventFunc ::= "eFunc" "(" Int ")"
+syntax EventMethods ::= "$eventFuncs" "(" Int ")"
+syntax EventMethod ::= "$eFunc" "(" Int ")"
+syntax EventMethods ::= EventMethod | EventMethod "," EventMethods
 
-rule $CMonitor NumOfEvents:Int NumOfStates:Int =>
- $incl $globalInit ($localInit(NumOfStates)) $reset
- ($stateFuncs(NumOfStates)) $eventFuncs(NumOfEvents)
- when NumOfEvents >Int 0 andBool NumOfStates >Int 0
+//the structure of an event action method
+//based on the configuration, the same method body prototype
+//can be rewritten to different concrete method bodies.
+syntax MethodHeader ::= "$methHeader" "(" Int ")"
+
+syntax EventAction ::= "$eAction" "(" Int ")"
+
+syntax MonitorStateUpdates ::= "$stateUpdates" "(" Int ")"
+syntax MonitorStateUpdate ::= "$sUpdate" "(" Int ")"
+syntax MonitorStateUpdates ::= MonitorStateUpdate
+                            | MonitorStateUpdate "," MonitorStateUpdates
+
+syntax HandlerActions ::= "$handlers"
+
+syntax MethodBody ::= EventAction ";;" MethodBody2
+syntax MethodBody2 ::= MonitorStateUpdates ";;" HandlerActions
+
+syntax EventMethod ::= MethodHeader "{" MethodBody "}"
+
+syntax MethodBody ::= "$mbody"
+syntax MethodBody2 ::= "$mbody2"
+
 
 endmodule

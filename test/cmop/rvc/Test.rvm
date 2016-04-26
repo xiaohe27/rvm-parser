@@ -2,15 +2,11 @@ package rvm;
 
 import java.io.*;
 Test (int o){
-	x = "foo"; 
-	class bar {
-		private int foo() { return 1; }
-		}
-
+	
    event hasnext(Iterator i) {} // {1, 1, 1, 3}
    event next(Iterator i) {} // {2, 0, 2, 3}
 
-	   fsm :
+   fsm :
      start [
         next -> unsafe
         hasnext -> safe
@@ -24,28 +20,12 @@ Test (int o){
         hasnext -> safe
      ]
 
-	@start {
+ //   alias match = unsafe, start
+
+	@match {
 		int j;
 	}
 
-
-	   fsm :
-     start2 [
-        next -> unsafe2
-        hasnext -> safe2
-     ]
-     safe2 [
-        next -> start2
-        hasnext -> safe2
-     ]
-     unsafe2 [
-        next -> unsafe2
-        hasnext -> safe2
-     ]
-
-	@unsafe2 {
-		int k;
-	}
 
 
 }

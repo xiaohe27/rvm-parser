@@ -41,6 +41,10 @@ module RVM-COMPILER-CORE
                       <importList color="yellow"> .K </importList>
 
                       <events color="pink"> .List </events> //list of event name strings
+                      //the params of each event, indexed by event id
+                      <eventParams> .List </eventParams>
+                      //the list of event action code, indexed by event id.
+                      <eventAction> .List </eventAction>
 
                       <specName> "" </specName>
                       <specParams> .Params </specParams>
@@ -104,6 +108,7 @@ module RVM-COMPILER-CORE
                      <lang> "c" </lang> //the default target language for the generated monitor code
                      <code> .List </code>
                      <tmp> .List </tmp> //temporary cell for manipulation.
+                     <methodBody> .K </methodBody>
                      <startCodeGen> false </startCodeGen>
                        </T>
 

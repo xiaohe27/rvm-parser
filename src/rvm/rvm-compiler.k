@@ -5,17 +5,11 @@ require "../helper/print-ast.k"
 require "../../src/helper/util.k"
 
 ////
-require "logic-plugins-shell.k"
-require "../c-monitor-code-template/c-monitor-template.k"
-
 module RVM-COMPILER
     imports RVM-SYNTAX
     imports RVM-COMPILER-CORE
     imports PRINT-AST
     imports UTIL
-
-        imports LOGIC-PLUGINS-SHELL
-        imports C-MONITOR-TEMPLATE
 
     syntax KResult ::= "error"
 
@@ -51,12 +45,17 @@ rule <k> {.K ((EM:EventModifier event (X:Id) (Ps:Params) Body:BlockBubble)
  Events:EventDecList => Events) Props:PropertyDecList} </k>
 <events> L:List (.List => ListItem(Id2String(X))) </events>
 
+//the params of each event, indexed by event id
+<eventParams> EP:List (.List => ListItem(Params2Str(Ps))) </eventParams>
+//the list of event action code, indexed by event id.
+<eventAction> EA:List (.List => ListItem(Block2Str(Body))) </eventAction>
+
 <eventFuncs>
   ...
 
   (.Bag =>
                               <eventFunc>
-                                  <event> X </event>
+                                  <event> X:Id </event>
                                   <props>
                                     <prop>
                                       <prank> PS -Int 1 </prank>
@@ -74,12 +73,13 @@ when notBool (Id2String(X) in L)
 
 
 //construct initial props cells
-rule <eventFuncs>
+rule
+<events> L:List </events>
+<eventFuncs>
   ...
 
-
                               <eventFunc>
-                                  <event> X </event>
+                                  <event> X:Id </event>
                                   <props>
                                     (.Bag => <prop>
                                                <prank> PS -Int 1 </prank>
@@ -93,7 +93,8 @@ rule <eventFuncs>
   ...
 </eventFuncs>
 <k2> PS:Int => PS -Int 1 </k2>
-when PS >Int 0
+when PS >Int 0 andBool isLastItem(L, X)
+
 
 rule <k2> 0 => .K </k2>
 
