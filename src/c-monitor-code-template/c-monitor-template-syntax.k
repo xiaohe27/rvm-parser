@@ -55,10 +55,11 @@ syntax MethodHeader ::= "$methHeader" "(" Int ")"
 
 syntax EventAction ::= "$eAction" "(" Int ")"
 
+//update the states in each property.
 syntax MonitorStateUpdates ::= "$stateUpdates" "(" Int ")"
 syntax MonitorStateUpdate ::= "$sUpdate" "(" Int ")"
 syntax MonitorStateUpdates ::= MonitorStateUpdate
-                            | MonitorStateUpdate "," MonitorStateUpdates
+                            | MonitorStateUpdate ",," MonitorStateUpdates
 
 syntax HandlerActions ::= "$handlers"
 
@@ -70,5 +71,19 @@ syntax EventMethod ::= MethodHeader "{" MethodBody "}"
 syntax MethodBody ::= "$mbody"
 syntax MethodBody2 ::= "$mbody2"
 
+//in the section of monitor state updates, there are two parts:
+//1. update the current state of the monitor,
+//2. update the state predicates for each state in the automata (whether that state is on)
+syntax MonitorStateUpdate ::= GlobalStateUpdate "," LocalStateUpdates
+//the int argument is the property rank of the state var
+syntax GlobalStateUpdate ::= "$gsUpdate" "(" Int ")"
+
+//the arg is the number of states in the current property
+syntax LocalStateUpdates ::= "$lsUpdates" "(" Int ")"
+
+//by querying the configuration, we can build the entry of state name (string) |-> state rank (int)
+syntax LocalStateUpdate ::= "$lsUpdate" "(" Int ")"
+
+syntax LocalStateUpdates ::= LocalStateUpdate | LocalStateUpdate LocalStateUpdates
 
 endmodule

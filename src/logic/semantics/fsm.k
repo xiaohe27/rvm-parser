@@ -109,6 +109,18 @@ rule    <logicType> fsm  </logicType>
     <scanNum> 1 </scanNum>  [prefer]
 
 ////////////////////////////////////////////////
+///////////collect the handler info
+
+rule <handler> (@LS:LogicState HB:HandlerBody) HDL:HandlerDecList => HDL </handler>
+<propNum> P:Int </propNum>
+<specName> SN:String </specName>
+<handlersList> HDM:Map (.Map => (localStateVarI(SN, P, getStateNameOf(LS)):String
+                |-> (getHandlerCodeStr(HB)):String ) )
+</handlersList>
+
+/////////////the three args are spec name, property rank and state name
+// localStateVarI(SN, P, getStateNameOf(LS))
+////////////////////////////////////////////////
 
 rule
 <logicType> fsm  </logicType>
@@ -146,10 +158,9 @@ rule <readyNum> N:Int => 0 </readyNum>
      <scanNum> _:Int => 0 </scanNum>
      <formula> _:K => .K </formula>
      <formulaCopy> _:K => .K </formulaCopy>
-
+     <handler> .HandlerDecList </handler>
  <stateNameMap> SL:List (.List => ListItem(SM)) </stateNameMap>
-    //TODO: process the handlers cell
-     <handlers> _:HandlerDecList => .HandlerDecList </handlers>
+
 when N ==Int size(EL)
 
 endmodule

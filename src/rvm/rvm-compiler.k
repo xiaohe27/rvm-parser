@@ -17,7 +17,7 @@ module RVM-COMPILER
 * Store the package info and import list.
 */
 rule <k> X:OptionalPackageDec Y:ImportDecList Z:SpecDec => Z </k>
-    <package> "" => toString(X) </package>
+    <package> "" => PackageDec2String(X) </package>
     <importList> .K => Y </importList>
 
 /**
@@ -41,14 +41,15 @@ Props:PropertyDecList} </k>
 /**
 * Extract and store the first event in the event list if we haven't encountered it before.
 */
-rule <k> {.K ((EM:EventModifier event (X:Id) (Ps:Params) Body:BlockBubble)
+rule
+<phase> 0 </phase>
+<k> {.K ((EM:EventModifier event (X:Id) (Ps:Params) Body:BlockBubble)
  Events:EventDecList => Events) Props:PropertyDecList} </k>
 <events> L:List (.List => ListItem(Id2String(X))) </events>
+<eventAction> EA:List (.List => ListItem(Block2Str(Body))) </eventAction>
 
 //the params of each event, indexed by event id
 <eventParams> EP:List (.List => ListItem(Params2Str(Ps))) </eventParams>
-//the list of event action code, indexed by event id.
-<eventAction> EA:List (.List => ListItem(Block2Str(Body))) </eventAction>
 
 <eventFuncs>
   ...
@@ -70,7 +71,6 @@ rule <k> {.K ((EM:EventModifier event (X:Id) (Ps:Params) Body:BlockBubble)
 <k2> .K => PS -Int 1 </k2>
 
 when notBool (Id2String(X) in L)
-
 
 //construct initial props cells
 rule
@@ -95,8 +95,8 @@ rule
 <k2> PS:Int => PS -Int 1 </k2>
 when PS >Int 0 andBool isLastItem(L, X)
 
-
 rule <k2> 0 => .K </k2>
+
 
 /**
 * Report error if an event is defined multiple times.
@@ -112,19 +112,21 @@ when (Id2String(X) in EL)
 //No events left
 rule
 <k> {.K (.EventDecList) Props:PropertyDecList} => Props </k>
+    <phase> 0 => 1 </phase>
 
-//add the first property and corresponding handlers
+
+//add the property formula and corresponding handlers
 rule <k> Prop:PropertyDec Props:PropertyDecList => Props </k>
     <propNum> I:Int => I +Int 1 </propNum>
     <logicType> .K => getLogicName(Prop) </logicType>
     <formula> .K => getFormula(Prop) </formula>
     <formulaCopy> .K => getFormula(Prop) </formulaCopy>
-    <handlers> .HandlerDecList => getHandlers(Prop)  </handlers>
+    <handler> .HandlerDecList => getHandlers(Prop) </handler>
     <runPlugin> false => true </runPlugin>
 
 //No properties left
-rule <k>.PropertyDecList => .</k>
+rule <k> .PropertyDecList => . </k>
 <runPlugin> false </runPlugin>
-<startCodeGen> false => true </startCodeGen>
+<states> M:Map => .Map </states>
 
 endmodule

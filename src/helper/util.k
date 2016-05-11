@@ -31,7 +31,7 @@ rule getStrKey((S:String |-> V:Int) M:Map, V) => S
 rule getStrKey((_:String |-> V1:Int) M:Map, V2:Int) => getStrKey(M, V2)
 when V1 =/=Int V2
 
-/*Get the size of a list of maps*/
+/*Get the size of the i-th map in the map list*/
 syntax Int ::= getSize(List, Int) [function]
 rule getSize(.List, I:Int) => 0
 rule getSize(ListItem(M:Map), 0) => size(M)
@@ -68,6 +68,12 @@ rule getStringI(ListItem(X:String) L:List, 0) => X
 rule getStringI(ListItem(X:String) L:List, I:Int) => "" when I <Int 0
 rule getStringI(ListItem(X:String) L:List, I:Int) =>
      getStringI(L, I -Int 1) when I >Int 0
+
+//convert a list of strings into a single string
+syntax String ::= StringList2String(List) [function]
+rule StringList2String(.List) => "\n"
+rule StringList2String(ListItem(S:String)) => S +String "\n"
+rule StringList2String(ListItem(S:String) L:List) => S +String "\n" +String StringList2String(L)
 
 
 endmodule

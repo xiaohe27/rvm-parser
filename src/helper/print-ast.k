@@ -8,13 +8,14 @@ module PRINT-AST
     imports C-MONITOR-TEMPLATE-SYNTAX
 
     //print package ast
-    syntax String ::=  toString(OptionalPackageDec) [function]
-    rule toString(package X:PackageName ;) => "package " +String toString(X) +String ";"
-    rule toString(None:OptionalPackageDec) => "\n"  [owise]
+    syntax String ::=  PackageDec2String(OptionalPackageDec) [function]
+    rule PackageDec2String(package X:PackageName ;) => "package " +String PackageName2String(X)
+                                                                  +String ";"
+    rule PackageDec2String(None:OptionalPackageDec) => "\n"
 
-    syntax String ::= toString(PackageName) [function]
-    rule toString(X:Id) => Id2String(X)
-    rule toString(P:PackageName . X:Id) => toString(P) +String "." +String Id2String(X)
+    syntax String ::= PackageName2String(PackageName) [function]
+    rule PackageName2String(X:Id) => Id2String(X)
+    rule PackageName2String(P:PackageName . X:Id) => PackageName2String(P) +String "." +String Id2String(X)
 
     //get logic name
     syntax LogicName ::= getLogicName(PropertyDec) [function]
@@ -99,8 +100,19 @@ rule Dims2Str(D:Dim Ds:Dims) => "[]" +String Dims2Str(Ds)
 /**
 Print the method body.
 */
-syntax String ::= Block2Str(BlockBubble) [function]
+syntax String ::= Block2Str(BlockBubble)
+[function, hook(STRING.token2string), klabel(Block2StringFunc)]
 
-rule Block2Str(B:BlockBubble) => "BlockStmt!" //TODO
+/**Get the state name from a handler dec head.*/
+syntax String ::= getStateNameOf(LogicState) [function]
+rule getStateNameOf(fail) => "fail"
+rule getStateNameOf(X:Id) => Id2String(X)
+
+/*Get the string of handler code*/
+syntax String ::= getHandlerCodeStr(HandlerBody) [function]
+rule getHandlerCodeStr(BB:BlockBubble) => Block2Str(BB)
+
+/*Print the Decl list as string*/
+syntax String ::= declBubbleList2String(DecBubbleList) [function, hook(STRING.token2string)]
 
 endmodule

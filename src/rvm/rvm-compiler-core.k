@@ -18,10 +18,8 @@ module RVM-COMPILER-SYNTAX
                             | MethodDecBubble [token, klabel('DecBubbleMethod)]
                             | FieldDecBubble [token, klabel('DecBubbleField)]
 
-    syntax BlockBubble ::= "{" BalancedBracket "}" [prefer, token, klabel('BlockBubble)]
-                             | "{" "}" [prefer, token, klabel('BlockBubbleEmpty)]
-
-
+    syntax BlockBubble ::= "{" BalancedBracket "}" [prefer, token, klabel(BlockBubbleLabel)]
+                             | EmptyBlock
 
 
 
@@ -35,7 +33,11 @@ endmodule
 module RVM-COMPILER-CORE
     imports RVM-SYNTAX
 
-    configuration <T> <k> $PGM:RVM  </k>
+    configuration <T>
+                      <phase> 0 </phase>
+
+                      <k> $PGM:RVM  </k>
+
                       <package color="black"> "" </package>
 
                       <importList color="yellow"> .K </importList>
@@ -63,7 +65,8 @@ module RVM-COMPILER-CORE
 //map a state name(string) to its integer rank, temporary working cell
                       <states> .Map </states>
 
-//states name mapping (string -> int, the map in <states> cell), indexed by property rank.
+// Each ListItem is a map from states name to state rank (string -> int),
+//indexed by property rank
                       <stateNameMap> .List </stateNameMap>
 
                       <curStateRank> 0 </curStateRank>
@@ -95,21 +98,25 @@ module RVM-COMPILER-CORE
 
                       <aliasSet> .K </aliasSet>
 
-                      <k2> .K </k2> //additional computation cell
-
 ///////////////////////Specific for FSM//////////////////////////////////////////////////////
 
 /////////////////////////////////Logic Plugin cells ends///////////////////////////////////////////
-                      <handlers> .HandlerDecList </handlers>
+                      //the map element maps state name to handler code string
+                      <handlersList> .Map </handlersList>
+
+                      <handler> .HandlerDecList </handler>
 
                       <err> .List </err>
 
 ///////////////////////////////Code Generation//////////////////////////////////////////////////
                      <lang> "c" </lang> //the default target language for the generated monitor code
                      <code> .List </code>
-                     <tmp> .List </tmp> //temporary cell for manipulation.
+                     <tmpList> .List </tmpList> //temporary cell for manipulation.
                      <methodBody> .K </methodBody>
-                     <startCodeGen> false </startCodeGen>
+                     <k2> .K </k2> //additional computation cell
+
+        ///////specific for monitor code in language C
+        <header> .List </header>
                        </T>
 
 endmodule
